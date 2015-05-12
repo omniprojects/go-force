@@ -94,6 +94,10 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 	defer resp.Body.Close()
 	forceApi.traceResponse(resp)
 
+	if resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
 	respBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("Error reading response bytes: %v", err)
