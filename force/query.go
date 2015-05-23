@@ -6,6 +6,10 @@ import (
 	"strings"
 )
 
+var (
+	QueryBatchSize = 2000
+)
+
 const (
 	BaseQueryString = "SELECT %v FROM %v"
 )

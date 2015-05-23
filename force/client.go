@@ -21,35 +21,41 @@ const (
 // Get issues a GET to the specified path with the given params and put the
 // umarshalled (json) result in the third parameter
 func (forceApi *ForceApi) Get(path string, params url.Values, out interface{}) error {
-	return forceApi.request("GET", path, params, nil, out)
+	return forceApi.translate("GET", path, params, nil, out)
+}
+
+// GetBlob issues a GET to the specified path with the given params and returns the
+// response body in bytes
+func (forceApi *ForceApi) GetBlob(path string, params url.Values) ([]byte, error) {
+	return forceApi.request("GET", path, params, nil)
 }
 
 // Post issues a POST to the specified path with the given params and payload
 // and put the unmarshalled (json) result in the third parameter
 func (forceApi *ForceApi) Post(path string, params url.Values, payload, out interface{}) error {
-	return forceApi.request("POST", path, params, payload, out)
+	return forceApi.translate("POST", path, params, payload, out)
 }
 
 // Put issues a PUT to the specified path with the given params and payload
 // and put the unmarshalled (json) result in the third parameter
 func (forceApi *ForceApi) Put(path string, params url.Values, payload, out interface{}) error {
-	return forceApi.request("PUT", path, params, payload, out)
+	return forceApi.translate("PUT", path, params, payload, out)
 }
 
 // Patch issues a PATCH to the specified path with the given params and payload
 // and put the unmarshalled (json) result in the third parameter
 func (forceApi *ForceApi) Patch(path string, params url.Values, payload, out interface{}) error {
-	return forceApi.request("PATCH", path, params, payload, out)
+	return forceApi.translate("PATCH", path, params, payload, out)
 }
 
 // Delete issues a DELETE to the specified path with the given payload
 func (forceApi *ForceApi) Delete(path string, params url.Values) error {
-	return forceApi.request("DELETE", path, params, nil, nil)
+	return forceApi.translate("DELETE", path, params, nil, nil)
 }
 
-func (forceApi *ForceApi) request(method, path string, params url.Values, payload, out interface{}) error {
+func (forceApi *ForceApi) request(method, path string, params url.Values, payload interface{}) ([]byte, error) {
 	if err := forceApi.oauth.Validate(); err != nil {
-		return fmt.Errorf("Error creating %v request: %v", method, err)
+		return []byte{}, fmt.Errorf("Error creating %v request: %v", method, err)
 	}
 
 	// Build Uri
@@ -67,7 +73,7 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 
 		jsonBytes, err := forcejson.Marshal(payload)
 		if err != nil {
-			return fmt.Errorf("Error marshaling encoded payload: %v", err)
+			return []byte{}, fmt.Errorf("Error marshaling encoded payload: %v", err)
 		}
 
 		body = bytes.NewReader(jsonBytes)
@@ -76,7 +82,12 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 	// Build Request
 	req, err := http.NewRequest(method, uri.String(), body)
 	if err != nil {
-		return fmt.Errorf("Error creating %v request: %v", method, err)
+		return []byte{}, fmt.Errorf("Error creating %v request: %v", method, err)
+	}
+
+	// Set a reasonable query batch size
+	if path == forceApi.apiResources[queryKey] || path == forceApi.apiResources[queryAllKey] {
+		req.Header.Set("Sforce-Query-Options", fmt.Sprintf("batchSize=%d", QueryBatchSize))
 	}
 
 	// Add Headers
@@ -89,20 +100,31 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 	forceApi.traceRequest(req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error sending %v request: %v", method, err)
+		return []byte{}, fmt.Errorf("Error sending %v request: %v", method, err)
 	}
 	defer resp.Body.Close()
 	forceApi.traceResponse(resp)
 
 	if resp.StatusCode == http.StatusNoContent {
-		return nil
+		return []byte{}, nil
 	}
 
-	respBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return fmt.Errorf("Error reading response bytes: %v", err)
+	if body, err := ioutil.ReadAll(resp.Body); err != nil {
+		return body, fmt.Errorf("Error reading response body: %v", err)
+	} else {
+		forceApi.traceResponseBody(body)
+		return body, nil
 	}
-	forceApi.traceResponseBody(respBytes)
+
+
+}
+
+func (forceApi *ForceApi) translate(method, path string, params url.Values, payload, out interface{}) error {
+
+	respBytes, err := forceApi.request(method, path, params, payload)
+	if err != nil {
+		return err
+	}
 
 	// Attempt to parse response into out
 	var objectUnmarshalErr error
@@ -125,7 +147,7 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 					return oauthErr
 				}
 
-				return forceApi.request(method, path, params, payload, out)
+				return forceApi.translate(method, path, params, payload, out)
 			}
 
 			return apiErrors
