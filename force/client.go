@@ -116,7 +116,6 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 		return body, nil
 	}
 
-
 }
 
 func (forceApi *ForceApi) translate(method, path string, params url.Values, payload, out interface{}) error {
@@ -124,6 +123,8 @@ func (forceApi *ForceApi) translate(method, path string, params url.Values, payl
 	respBytes, err := forceApi.request(method, path, params, payload)
 	if err != nil {
 		return err
+	} else if len(respBytes) == 0 {
+		return nil
 	}
 
 	// Attempt to parse response into out
