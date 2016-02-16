@@ -11,8 +11,8 @@ import (
 
 const (
 	grantType    = "password"
-	loginUri     = "http://login.salesforce.com@52.36.147.234/services/oauth2/token"
-	testLoginUri = "http://test.salesforce.com@52.36.147.234/services/oauth2/token"
+	loginUri     = "http://login.salesforce.com@proxy.beomni.com/services/oauth2/token"
+	testLoginUri = "http://test.salesforce.com@staging-proxy.beomni.com/services/oauth2/token"
 
 	invalidSessionErrorCode = "INVALID_SESSION_ID"
 )
