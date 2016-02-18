@@ -66,9 +66,9 @@ func (oauth *forceOauth) Authenticate() error {
 	proxyURL := &url.URL{Scheme:"http"}
 	if oauth.environment == "sandbox" {
 		uri = testLoginUri
-		proxyURL.Host = "staging-proxy.beomni.com"
+		proxyURL.Host = "staging-proxy.beomni.com:8000"
 	} else {
-		proxyURL.Host = "proxy.beomni.com"
+		proxyURL.Host = "proxy.beomni.com:8000"
 	}
 
 	// Build Body
