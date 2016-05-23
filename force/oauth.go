@@ -63,7 +63,7 @@ func (oauth *forceOauth) Authenticate() error {
 
 	// Build Uri
 	uri := loginUri
-	proxyURL := &url.URL{Scheme:"http"}
+	proxyURL := &url.URL{Scheme: "http"}
 	if oauth.environment == "sandbox" {
 		uri = testLoginUri
 		proxyURL.Host = "staging-proxy.beomni.com:8000"
@@ -85,7 +85,7 @@ func (oauth *forceOauth) Authenticate() error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", responseType)
 
-	oauth.client = &http.Client{Transport: &http.Transport{Proxy:http.ProxyURL(proxyURL)}}
+	oauth.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 	resp, err := oauth.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Error sending authentication request: %v", err)
