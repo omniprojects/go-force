@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/omniprojects/go-force/forcejson"
 )
@@ -99,6 +100,12 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 	// Send
 	forceApi.traceRequest(req)
 	resp, err := forceApi.oauth.client.Do(req)
+	retries := 0
+	// retry on failure
+	for err != nil && retries < forceApi.maxRetryRequests && strings.HasSuffix(err.Error(), "getsockopt: connection refused") {
+		resp, err = forceApi.oauth.client.Do(req)
+		retries++
+	}
 	if err != nil {
 		return []byte{}, fmt.Errorf("Error sending %v request: %v", method, err)
 	}

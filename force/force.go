@@ -19,7 +19,7 @@ const (
 )
 
 func Create(version, clientId, clientSecret, userName, password, securityToken,
-	environment string) (*ForceApi, error) {
+	environment string, maxRetryRequests ...int) (*ForceApi, error) {
 	oauth := &forceOauth{
 		clientId:      clientId,
 		clientSecret:  clientSecret,
@@ -29,12 +29,17 @@ func Create(version, clientId, clientSecret, userName, password, securityToken,
 		environment:   environment,
 	}
 
+	maxRetries := 0
+	if len(maxRetryRequests) > 0 {
+		maxRetries = maxRetryRequests[0]
+	}
 	forceApi := &ForceApi{
 		apiResources:           make(map[string]string),
 		apiSObjects:            make(map[string]*SObjectMetaData),
 		apiSObjectDescriptions: make(map[string]*SObjectDescription),
 		apiVersion:             version,
 		oauth:                  oauth,
+		maxRetryRequests:       maxRetries,
 	}
 
 	// Init oauth
