@@ -27,6 +27,7 @@ type ForceApi struct {
 	apiMaxBatchSize        int64
 	logger                 ForceApiLogger
 	logPrefix              string
+	maxRetryRequests       int
 }
 
 type SObjectApiResponse struct {

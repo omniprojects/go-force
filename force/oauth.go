@@ -88,7 +88,7 @@ func (oauth *forceOauth) Authenticate() error {
 	oauth.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
 	resp, err := oauth.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error sending authentication request: %v", err)
+		return fmt.Errorf("Error sending authentication request %v to %v! Error: %v", body, uri, err)
 	}
 	defer resp.Body.Close()
 
