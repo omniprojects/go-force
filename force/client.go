@@ -102,7 +102,10 @@ func (forceApi *ForceApi) request(method, path string, params url.Values, payloa
 	resp, err := forceApi.oauth.client.Do(req)
 	retries := 0
 	// retry on failure
-	for err != nil && retries < forceApi.maxRetryRequests && strings.HasSuffix(err.Error(), "getsockopt: connection refused") {
+	for err != nil && retries < forceApi.maxRetryRequests &&
+		(strings.HasSuffix(err.Error(), "getsockopt: connection refused") ||
+			err == io.EOF ||
+			err == io.ErrUnexpectedEOF) {
 		resp, err = forceApi.oauth.client.Do(req)
 		retries++
 	}
@@ -146,7 +149,7 @@ func (forceApi *ForceApi) translate(method, path string, params url.Values, payl
 	// Attempt to parse response as a force.com api error before returning object unmarshal err
 	apiErrors := ApiErrors{}
 	if marshalErr := forcejson.Unmarshal(respBytes, &apiErrors); marshalErr == nil {
-		if apiErrors.Validate() {
+		if apiErrors.Validate() { // if there is at least one error
 			// Check if error is oauth token expired
 			if forceApi.oauth.Expired(apiErrors) {
 				// Reauthenticate then attempt query again
