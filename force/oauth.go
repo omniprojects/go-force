@@ -11,8 +11,8 @@ import (
 
 const (
 	grantType    = "password"
-	loginUri     = "http://login.salesforce.com/services/oauth2/token"
-	testLoginUri = "http://test.salesforce.com/services/oauth2/token"
+	loginUri     = "https://login.salesforce.com/services/oauth2/token"
+	testLoginUri = "https://test.salesforce.com/services/oauth2/token"
 
 	invalidSessionErrorCode = "INVALID_SESSION_ID"
 )
@@ -63,12 +63,8 @@ func (oauth *forceOauth) Authenticate() error {
 
 	// Build Uri
 	uri := loginUri
-	proxyURL := &url.URL{Scheme: "http"}
 	if oauth.environment == "sandbox" {
 		uri = testLoginUri
-		proxyURL.Host = "staging-proxy.beomni.com:8000"
-	} else {
-		proxyURL.Host = "proxy.beomni.com:8000"
 	}
 
 	// Build Body
@@ -85,7 +81,7 @@ func (oauth *forceOauth) Authenticate() error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", responseType)
 
-	oauth.client = &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(proxyURL)}}
+	oauth.client = &http.Client{}
 	resp, err := oauth.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Error sending authentication request %v to %v! Error: %v", body, uri, err)
