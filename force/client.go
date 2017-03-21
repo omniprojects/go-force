@@ -46,7 +46,13 @@ func (forceApi *ForceApi) Put(path string, params url.Values, payload, out inter
 // Patch issues a PATCH to the specified path with the given params and payload
 // and put the unmarshalled (json) result in the third parameter
 func (forceApi *ForceApi) Patch(path string, params url.Values, payload, out interface{}) error {
-	return forceApi.translate("PATCH", path, params, payload, out)
+	err := forceApi.translate("PATCH", path, params, payload, out)
+	i := 0
+	for err != nil && i < 5 {
+		err = forceApi.translate("PATCH", path, params, payload, out)
+		i++
+	}
+	return err
 }
 
 // Delete issues a DELETE to the specified path with the given payload
